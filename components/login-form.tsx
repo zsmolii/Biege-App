@@ -13,6 +13,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [registerUsername, setRegisterUsername] = useState("")
+  const [registerEmail, setRegisterEmail] = useState("") // E-Mail-Feld für Registrierung hinzugefügt
   const [registerPassword, setRegisterPassword] = useState("")
   const [registerCode, setRegisterCode] = useState("")
   const [error, setError] = useState("")
@@ -38,7 +39,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError("")
     setLoading(true)
 
-    const result = await register(registerUsername, registerPassword, registerCode)
+    const result = await register(registerUsername, registerEmail, registerPassword, registerCode)
 
     if (result.success) {
       // Auto-login after registration
@@ -102,12 +103,24 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-username">Benutzername</Label>
+                  <Label htmlFor="register-username">Name</Label>
                   <Input
                     id="register-username"
                     type="text"
                     value={registerUsername}
                     onChange={(e) => setRegisterUsername(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">E-Mail</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    placeholder="beispiel@email.de"
                     required
                     disabled={loading}
                   />
