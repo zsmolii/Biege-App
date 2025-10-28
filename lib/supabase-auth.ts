@@ -4,6 +4,7 @@ const REGISTRATION_CODE = "Schlosser"
 
 export async function register(
   username: string,
+  email: string,
   password: string,
   registrationCode: string,
 ): Promise<{ success: boolean; error?: string }> {
@@ -13,8 +14,6 @@ export async function register(
 
   const supabase = createClient()
 
-  const email = `${username.toLowerCase()}@bending-app.com`
-
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -22,7 +21,6 @@ export async function register(
       data: {
         username,
       },
-      emailRedirectTo: undefined,
     },
   })
 
@@ -36,7 +34,7 @@ export async function register(
 export async function login(username: string, password: string): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
 
-  const email = `${username.toLowerCase()}@bending-app.com`
+  const email = `${username}@bending-app.local`
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
