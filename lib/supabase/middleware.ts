@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function updateSession(request: NextRequest) {
+// 🚨 Hier ist die Korrektur: Umbenennung zu 'middleware'
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -29,11 +30,25 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Leitet unauthentifizierte Benutzer zu /auth/login um, außer sie sind bereits auf /auth
   if (!user && !request.nextUrl.pathname.startsWith("/auth")) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
   }
 
+  // Gibt die Antwort mit aktualisierten Cookies zurück
   return supabaseResponse
 }
+// Vergessen Sie nicht, die Config hinzuzufügen, um zu steuern, welche Pfade geschützt werden sollen:
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match all request paths except for the ones starting with:
+//      * - _next/static (static files)
+//      * - _next/image (image optimization files)
+//      * - favicon.ico (favicon file)
+//      */
+//     '/((?!_next/static|_next/image|favicon.ico).*)',
+//   ],
+// }
