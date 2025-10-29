@@ -109,18 +109,12 @@ export async function findRecipe(
 // Rezept speichern
 export async function saveRecipe(recipe: BendingRecipe): Promise<boolean> {
   const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  if (!user) {
-    console.error("User not authenticated")
-    return false
-  }
+  const userId = "00000000-0000-0000-0000-000000000001"
 
   const { error } = await supabase.from("bending_recipes").insert({
     ...recipe,
-    created_by: user.id,
+    created_by: userId,
     updated_at: new Date().toISOString(),
   })
 
@@ -135,20 +129,14 @@ export async function saveRecipe(recipe: BendingRecipe): Promise<boolean> {
 // Zeichnung speichern
 export async function saveDrawing(drawing: DrawingData): Promise<string | null> {
   const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  if (!user) {
-    console.error("User not authenticated")
-    return null
-  }
+  const userId = "00000000-0000-0000-0000-000000000001"
 
   const { data, error } = await supabase
     .from("drawings")
     .insert({
       ...drawing,
-      created_by: user.id,
+      created_by: userId,
     })
     .select("id")
     .single()
