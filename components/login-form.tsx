@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { login, register } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,10 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
-  const [loginUsername, setLoginUsername] = useState("")
+  const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
-  const [registerUsername, setRegisterUsername] = useState("")
+  const [registerEmail, setRegisterEmail] = useState("")
   const [registerPassword, setRegisterPassword] = useState("")
+  const [registerUsername, setRegisterUsername] = useState("")
   const [registerCode, setRegisterCode] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -24,14 +25,24 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true)
 
     try {
-      const result = login(loginUsername, loginPassword)
+      const supabase = createClient()
 
-      if (!result.success) {
-        throw new Error(result.error)
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      })
+
+      if (signInError) {
+        throw signInError
+      }
+
+      if (!data.user) {
+        throw new Error("Anmeldung fehlgeschlagen")
       }
 
       onLoginSuccess()
     } catch (err: any) {
+      console.error("[v0] Login error:", err)
       setError(err.message || "Ungültige Anmeldedaten")
     } finally {
       setLoading(false)
@@ -44,18 +55,38 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true)
 
     try {
-      const result = register(registerUsername, registerPassword, registerCode)
+      if (registerCode !== "Schlosser") {
+        throw new Error("Ungültiger Registrierungscode")
+      }
 
-      if (!result.success) {
-        throw new Error(result.error)
+      const supabase = createClient()
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: registerEmail,
+        password: registerPassword,
+        options: {
+          data: {
+            username: registerUsername,
+          },
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin,
+        },
+      })
+
+      if (signUpError) {
+        throw signUpError
+      }
+
+      if (!data.user) {
+        throw new Error("Registrierung fehlgeschlagen")
       }
 
       setError("Registrierung erfolgreich! Sie können sich jetzt anmelden.")
-      // Reset form
-      setRegisterUsername("")
+      setRegisterEmail("")
       setRegisterPassword("")
+      setRegisterUsername("")
       setRegisterCode("")
     } catch (err: any) {
+      console.error("[v0] Register error:", err)
       setError(err.message || "Registrierung fehlgeschlagen")
     } finally {
       setLoading(false)
@@ -79,13 +110,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-username">Benutzername</Label>
+                  <Label htmlFor="login-email">E-Mail</Label>
                   <Input
-                    id="login-username"
-                    type="text"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
-                    placeholder="Benutzername"
+                    id="login-email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="admin@bending-app.local"
                     required
                     disabled={loading}
                   />
@@ -105,6 +136,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Wird geladen..." : "Anmelden"}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">Test-Login: admin@bending-app.local / Admin</p>
               </form>
             </TabsContent>
 
@@ -118,6 +150,18 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                     value={registerUsername}
                     onChange={(e) => setRegisterUsername(e.target.value)}
                     placeholder="Benutzername"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">E-Mail</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    placeholder="ihre@email.de"
                     required
                     disabled={loading}
                   />
