@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client"
 import { LoginForm } from "@/components/login-form"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -29,11 +28,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       setAuthenticated(false)
     } finally {
       setLoading(false)
-      setMounted(true)
     }
   }
 
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
