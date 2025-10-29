@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
-  const [registerUsername, setRegisterUsername] = useState("")
+  const [registerName, setRegisterName] = useState("")
   const [registerEmail, setRegisterEmail] = useState("")
   const [registerPassword, setRegisterPassword] = useState("")
   const [registerCode, setRegisterCode] = useState("")
@@ -39,16 +39,15 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError("")
     setLoading(true)
 
-    const result = await register(registerUsername, registerEmail, registerPassword, registerCode)
+    const result = await register(registerName, registerEmail, registerPassword, registerCode)
 
     if (result.success) {
-      // Auto-login after registration
-      const loginResult = await login(registerUsername, registerPassword)
       setLoading(false)
-
-      if (loginResult.success) {
-        onLoginSuccess()
-      }
+      setError("Registrierung erfolgreich! Bitte melden Sie sich an.")
+      // Switch to login tab
+      setTimeout(() => {
+        setError("")
+      }, 3000)
     } else {
       setLoading(false)
       setError(result.error || "Registrierung fehlgeschlagen")
@@ -103,12 +102,12 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-username">Name</Label>
+                  <Label htmlFor="register-name">Name</Label>
                   <Input
-                    id="register-username"
+                    id="register-name"
                     type="text"
-                    value={registerUsername}
-                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
                     required
                     disabled={loading}
                   />
@@ -137,13 +136,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-code">Code</Label>
+                  <Label htmlFor="register-code">Registrierungscode</Label>
                   <Input
                     id="register-code"
                     type="text"
                     value={registerCode}
                     onChange={(e) => setRegisterCode(e.target.value)}
-                    placeholder="Schlosser"
+                    placeholder="Code eingeben"
                     required
                     disabled={loading}
                   />
