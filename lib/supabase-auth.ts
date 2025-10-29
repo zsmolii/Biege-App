@@ -34,7 +34,7 @@ export async function register(
 export async function login(username: string, password: string): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
 
-  const email = `${username}@bending-app.local`
+  const email = `${username.toLowerCase()}@bending-app.com`
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
