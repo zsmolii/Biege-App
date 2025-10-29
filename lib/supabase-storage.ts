@@ -44,6 +44,14 @@ export interface LearnedAllowance {
   usage_count?: number
 }
 
+async function getCurrentUserId(): Promise<string> {
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  return user?.id || "00000000-0000-0000-0000-000000000001"
+}
+
 // Werkzeuge abrufen
 export async function getTools(type: "v_opening" | "radius" | "material"): Promise<string[]> {
   const supabase = createClient()
@@ -110,7 +118,7 @@ export async function findRecipe(
 export async function saveRecipe(recipe: BendingRecipe): Promise<boolean> {
   const supabase = createClient()
 
-  const userId = "00000000-0000-0000-0000-000000000001"
+  const userId = await getCurrentUserId()
 
   const { error } = await supabase.from("bending_recipes").insert({
     ...recipe,
@@ -130,7 +138,7 @@ export async function saveRecipe(recipe: BendingRecipe): Promise<boolean> {
 export async function saveDrawing(drawing: DrawingData): Promise<string | null> {
   const supabase = createClient()
 
-  const userId = "00000000-0000-0000-0000-000000000001"
+  const userId = await getCurrentUserId()
 
   const { data, error } = await supabase
     .from("drawings")
