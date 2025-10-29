@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-// Die App nutzt das AuthGuard Component auf der Hauptseite für Login
 export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
