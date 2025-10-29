@@ -3,12 +3,15 @@ import { createClient } from "@/lib/supabase/client"
 const REGISTRATION_CODE = "Schlosser"
 
 export async function register(
-  username: string,
+  name: string,
   email: string,
   password: string,
   registrationCode: string,
 ): Promise<{ success: boolean; error?: string }> {
+  console.log("[v0] Register attempt:", { name, email, registrationCode })
+
   if (registrationCode !== REGISTRATION_CODE) {
+    console.log("[v0] Invalid registration code")
     return { success: false, error: "Ungültiger Registrierungscode" }
   }
 
@@ -19,22 +22,26 @@ export async function register(
     password,
     options: {
       data: {
-        username,
+        name,
       },
     },
   })
 
   if (error) {
+    console.log("[v0] Registration error:", error)
     return { success: false, error: error.message }
   }
 
+  console.log("[v0] Registration successful")
   return { success: true }
 }
 
 export async function login(username: string, password: string): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
 
-  const email = `${username.toLowerCase()}@bending-app.com`
+  // Convert username to lowercase and create email
+  const email = `${username.toLowerCase()}@bending-app.local`
+  console.log("[v0] Login attempt with email:", email)
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -42,9 +49,11 @@ export async function login(username: string, password: string): Promise<{ succe
   })
 
   if (error) {
+    console.log("[v0] Login error:", error)
     return { success: false, error: "Ungültige Anmeldedaten" }
   }
 
+  console.log("[v0] Login successful")
   return { success: true }
 }
 
@@ -67,5 +76,5 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 export function getUsername(user: any): string {
-  return user?.user_metadata?.username || user?.email?.split("@")[0] || "User"
+  return user?.user_metadata?.name || user?.email?.split("@")[0] || "User"
 }
