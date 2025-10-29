@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useEffect, useState } from "react"
 import { findRecipe, type BendingRecipe } from "@/lib/supabase-storage"
 import { createClient } from "@/lib/supabase/client"
@@ -139,6 +137,24 @@ function BendingMachineContent() {
 }
 
 export default function BendingMachinePage() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Während des Server-Side Renders und ersten Client-Renders nichts anzeigen
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Lädt...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <AuthGuard>
       <BendingMachineContent />
