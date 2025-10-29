@@ -1,20 +1,19 @@
-import { NextResponse } from "next/server"
+import { updateSession } from "@/lib/supabase/middleware"
 import type { NextRequest } from "next/server"
 
-export function middleware(request: NextRequest) {
-  return NextResponse.next()
+export async function middleware(request: NextRequest) {
+  return await updateSession(request)
 }
 
-// Optional: Konfiguriere welche Pfade die Middleware ausführen soll
 export const config = {
   matcher: [
     /*
      * Match alle Pfade außer:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
