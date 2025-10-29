@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { login, register } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,10 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
-  const [loginEmail, setLoginEmail] = useState("")
+  const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
-  const [registerName, setRegisterName] = useState("")
-  const [registerEmail, setRegisterEmail] = useState("")
+  const [registerUsername, setRegisterUsername] = useState("")
   const [registerPassword, setRegisterPassword] = useState("")
   const [registerCode, setRegisterCode] = useState("")
   const [error, setError] = useState("")
@@ -25,13 +24,12 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
-      })
+      const result = login(loginUsername, loginPassword)
 
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
       onLoginSuccess()
     } catch (err: any) {
       setError(err.message || "Ungültige Anmeldedaten")
@@ -46,29 +44,15 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true)
 
     try {
-      // Validiere Registrierungscode
-      if (registerCode !== "Schlosser") {
-        throw new Error("Ungültiger Registrierungscode")
+      const result = register(registerUsername, registerPassword, registerCode)
+
+      if (!result.success) {
+        throw new Error(result.error)
       }
 
-      const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
-        email: registerEmail,
-        password: registerPassword,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}`,
-          data: {
-            name: registerName,
-          },
-        },
-      })
-
-      if (error) throw error
-
-      setError("Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mail zur Bestätigung.")
+      setError("Registrierung erfolgreich! Sie können sich jetzt anmelden.")
       // Reset form
-      setRegisterName("")
-      setRegisterEmail("")
+      setRegisterUsername("")
       setRegisterPassword("")
       setRegisterCode("")
     } catch (err: any) {
@@ -95,13 +79,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">E-Mail</Label>
+                  <Label htmlFor="login-username">Benutzername</Label>
                   <Input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="beispiel@email.de"
+                    id="login-username"
+                    type="text"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    placeholder="Benutzername"
                     required
                     disabled={loading}
                   />
@@ -127,24 +111,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Name</Label>
+                  <Label htmlFor="register-username">Benutzername</Label>
                   <Input
-                    id="register-name"
+                    id="register-username"
                     type="text"
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">E-Mail</Label>
-                  <Input
-                    id="register-email"
-                    type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    placeholder="beispiel@email.de"
+                    value={registerUsername}
+                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    placeholder="Benutzername"
                     required
                     disabled={loading}
                   />
