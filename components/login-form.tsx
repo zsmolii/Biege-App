@@ -17,20 +17,25 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [registerUsername, setRegisterUsername] = useState("")
   const [registerCode, setRegisterCode] = useState("")
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
     setLoading(true)
 
     try {
+      console.log("[v0] Attempting login with:", loginEmail)
       const supabase = createClient()
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       })
+
+      console.log("[v0] Login response:", { data, error: signInError })
 
       if (signInError) {
         throw signInError
@@ -40,6 +45,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Anmeldung fehlgeschlagen")
       }
 
+      console.log("[v0] Login successful!")
       onLoginSuccess()
     } catch (err: any) {
       console.error("[v0] Login error:", err)
@@ -52,6 +58,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
     setLoading(true)
 
     try {
@@ -59,6 +66,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Ungültiger Registrierungscode")
       }
 
+      console.log("[v0] Attempting registration with:", registerEmail)
       const supabase = createClient()
 
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -72,6 +80,8 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         },
       })
 
+      console.log("[v0] Registration response:", { data, error: signUpError })
+
       if (signUpError) {
         throw signUpError
       }
@@ -80,7 +90,17 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Registrierung fehlgeschlagen")
       }
 
-      setError("Registrierung erfolgreich! Sie können sich jetzt anmelden.")
+      if (data.session) {
+        console.log("[v0] Registration successful with auto-login!")
+        setSuccess("Registrierung erfolgreich! Sie werden angemeldet...")
+        setTimeout(() => {
+          onLoginSuccess()
+        }, 1500)
+      } else {
+        console.log("[v0] Registration successful, email confirmation required")
+        setSuccess("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse.")
+      }
+
       setRegisterEmail("")
       setRegisterPassword("")
       setRegisterUsername("")
@@ -116,7 +136,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="admin@bending-app.local"
+                    placeholder="ihre@email.de"
                     required
                     disabled={loading}
                   />
@@ -133,10 +153,10 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
+                {success && <p className="text-sm text-green-600">{success}</p>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Wird geladen..." : "Anmelden"}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">Test-Login: admin@bending-app.local / Admin</p>
               </form>
             </TabsContent>
 
@@ -175,6 +195,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                     onChange={(e) => setRegisterPassword(e.target.value)}
                     required
                     disabled={loading}
+                    minLength={6}
                   />
                 </div>
                 <div className="space-y-2">
@@ -190,6 +211,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
+                {success && <p className="text-sm text-green-600">{success}</p>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Wird geladen..." : "Registrieren"}
                 </Button>
