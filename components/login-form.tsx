@@ -13,7 +13,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [registerUsername, setRegisterUsername] = useState("")
-  const [registerEmail, setRegisterEmail] = useState("") // E-Mail-Feld für Registrierung hinzugefügt
+  const [registerEmail, setRegisterEmail] = useState("")
   const [registerPassword, setRegisterPassword] = useState("")
   const [registerCode, setRegisterCode] = useState("")
   const [error, setError] = useState("")
@@ -137,13 +137,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-code">Registrierungscode</Label>
+                  <Label htmlFor="register-code">Code</Label>
                   <Input
                     id="register-code"
                     type="text"
                     value={registerCode}
                     onChange={(e) => setRegisterCode(e.target.value)}
-                    placeholder="Code eingeben"
+                    placeholder="Schlosser"
                     required
                     disabled={loading}
                   />
