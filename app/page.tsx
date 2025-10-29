@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { findRecipe, type BendingRecipe } from "@/lib/supabase-storage"
-import { logout, getCurrentUser, getUsername } from "@/lib/supabase-auth"
+import { logout, getCurrentUser } from "@/lib/auth"
 import { AuthGuard } from "@/components/auth-guard"
 import { RecipeSearch } from "@/components/recipe-search"
 import { LearningMode } from "@/components/learning-mode"
@@ -26,14 +26,11 @@ function BendingMachineContent() {
   const [currentUser, setCurrentUser] = useState<string>("")
 
   useEffect(() => {
-    const loadUser = async () => {
-      const user = await getCurrentUser()
-      if (user) {
-        setCurrentUser(getUsername(user))
-      }
-      setMounted(true)
+    const user = getCurrentUser()
+    if (user) {
+      setCurrentUser(user.username)
     }
-    loadUser()
+    setMounted(true)
   }, [])
 
   if (!mounted) {
@@ -66,8 +63,8 @@ function BendingMachineContent() {
     }
   }
 
-  const handleLogout = async () => {
-    await logout()
+  const handleLogout = () => {
+    logout()
     window.location.reload()
   }
 
