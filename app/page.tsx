@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { findRecipe, type BendingRecipe } from "@/lib/supabase-storage"
-import { logout, getCurrentUser } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/client"
 import { AuthGuard } from "@/components/auth-guard"
 import { RecipeSearch } from "@/components/recipe-search"
 import { LearningMode } from "@/components/learning-mode"
@@ -26,12 +26,25 @@ function BendingMachineContent() {
   const [currentUser, setCurrentUser] = useState<string>("")
 
   useEffect(() => {
-    const user = getCurrentUser()
-    if (user) {
-      setCurrentUser(user.username)
-    }
+    loadUser()
     setMounted(true)
   }, [])
+
+  const loadUser = async () => {
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const username = user.user_metadata?.username || user.email?.split("@")[0] || "User"
+        setCurrentUser(username)
+      }
+    } catch (error) {
+      console.error("[v0] Error loading user:", error)
+    }
+  }
 
   if (!mounted) {
     return null
@@ -63,9 +76,14 @@ function BendingMachineContent() {
     }
   }
 
-  const handleLogout = () => {
-    logout()
-    window.location.reload()
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.reload()
+    } catch (error) {
+      console.error("[v0] Logout error:", error)
+    }
   }
 
   return (
