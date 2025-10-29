@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 
 function BendingMachineContent() {
-  const [mounted, setMounted] = useState(false)
   const [foundRecipe, setFoundRecipe] = useState<BendingRecipe | null>(null)
   const [searchParams, setSearchParams] = useState<{
     material: string
@@ -27,7 +26,6 @@ function BendingMachineContent() {
 
   useEffect(() => {
     loadUser()
-    setMounted(true)
   }, [])
 
   const loadUser = async () => {
@@ -44,10 +42,6 @@ function BendingMachineContent() {
     } catch (error) {
       console.error("[v0] Error loading user:", error)
     }
-  }
-
-  if (!mounted) {
-    return null
   }
 
   const handleSearch = async (params: {
