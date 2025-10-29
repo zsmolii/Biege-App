@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { isAuthenticated } from "@/lib/supabase-auth"
+import { isAuthenticated, initializeAuth } from "@/lib/auth"
 import { LoginForm } from "@/components/login-form"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -10,12 +10,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const isAuth = await isAuthenticated()
-      setAuthenticated(isAuth)
-      setMounted(true)
-    }
-    checkAuth()
+    initializeAuth()
+    const isAuth = isAuthenticated()
+    setAuthenticated(isAuth)
+    setMounted(true)
   }, [])
 
   if (!mounted) {
