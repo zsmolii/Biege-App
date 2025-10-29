@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { login, register } from "@/lib/supabase-auth"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
-  const [loginUsername, setLoginUsername] = useState("")
+  const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [registerName, setRegisterName] = useState("")
   const [registerEmail, setRegisterEmail] = useState("")
@@ -24,13 +24,19 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError("")
     setLoading(true)
 
-    const result = await login(loginUsername, loginPassword)
-    setLoading(false)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      })
 
-    if (result.success) {
+      if (error) throw error
       onLoginSuccess()
-    } else {
-      setError(result.error || "Anmeldung fehlgeschlagen")
+    } catch (err: any) {
+      setError(err.message || "Ungültige Anmeldedaten")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -39,18 +45,36 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError("")
     setLoading(true)
 
-    const result = await register(registerName, registerEmail, registerPassword, registerCode)
+    try {
+      // Validiere Registrierungscode
+      if (registerCode !== "Schlosser") {
+        throw new Error("Ungültiger Registrierungscode")
+      }
 
-    if (result.success) {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signUp({
+        email: registerEmail,
+        password: registerPassword,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}`,
+          data: {
+            name: registerName,
+          },
+        },
+      })
+
+      if (error) throw error
+
+      setError("Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mail zur Bestätigung.")
+      // Reset form
+      setRegisterName("")
+      setRegisterEmail("")
+      setRegisterPassword("")
+      setRegisterCode("")
+    } catch (err: any) {
+      setError(err.message || "Registrierung fehlgeschlagen")
+    } finally {
       setLoading(false)
-      setError("Registrierung erfolgreich! Bitte melden Sie sich an.")
-      // Switch to login tab
-      setTimeout(() => {
-        setError("")
-      }, 3000)
-    } else {
-      setLoading(false)
-      setError(result.error || "Registrierung fehlgeschlagen")
     }
   }
 
@@ -71,12 +95,13 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-username">Benutzername</Label>
+                  <Label htmlFor="login-email">E-Mail</Label>
                   <Input
-                    id="login-username"
-                    type="text"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
+                    id="login-email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="beispiel@email.de"
                     required
                     disabled={loading}
                   />
