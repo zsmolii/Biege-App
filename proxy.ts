@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
 export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -26,21 +25,11 @@ export default async function proxy(request: NextRequest) {
     },
   )
 
-  // Session aktualisieren
   await supabase.auth.getUser()
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match alle Pfade außer:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 }
