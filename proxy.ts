@@ -1,17 +1,38 @@
-// in der Datei ./proxy.ts
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-// Die Funktion MUSS als 'default' oder als 'proxy' exportiert werden.
 export function proxy(request: NextRequest) {
-  // Ihre Proxy-Logik kommt hier rein.
-  // Wenn Sie momentan nur einen Platzhalter brauchen, verwenden Sie diesen.
-  return NextResponse.next();
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
+      },
+    },
+  )
+
+  supabase.auth.getUser()
+
+  return response
 }
 
-// Optional: Konfiguration (passt an, auf welchen Pfaden der Proxy laufen soll)
 export const config = {
-  // Dies würde den Proxy auf alle Pfade anwenden.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+}
