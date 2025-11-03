@@ -74,9 +74,19 @@ export function calculateMarkingPoints(
       isLearned = true
       hasLearnedData = true
     } else {
-      // Use calculated defaults
       bendAllowance = calculateDefaultBendAllowance(bend.thickness, radius, bend.bendAngle)
-      experienceCorrection = 0
+
+      // Erfahrungskorrektur basierend auf Winkel
+      // Für 30°: ca. 1.5mm
+      // Für 90°: ca. 1.5mm
+      if (bend.bendAngle <= 45) {
+        experienceCorrection = 1.5
+      } else if (bend.bendAngle <= 90) {
+        experienceCorrection = 1.5
+      } else {
+        experienceCorrection = 2.0
+      }
+
       const defaults = getDefaultMachineSettings(bend.thickness, bend.vOpening, bend.bendAngle)
       groundSetting = defaults.groundSetting
       pressDistance = defaults.pressDistance
@@ -94,7 +104,7 @@ export function calculateMarkingPoints(
 
     instructions.push({
       bendNumber: index + 1,
-      markingPoint: Math.round(cumulativeLength),
+      markingPoint: Math.round(cumulativeLength * 10) / 10, // Runde auf 0.1mm genau
       angle: bend.bendAngle,
       radius,
       vOpening: bend.vOpening,
