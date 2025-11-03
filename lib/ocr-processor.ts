@@ -79,7 +79,7 @@ export function processBendData(
   const bends = []
   const { dimensions, angles, radius, thickness, bendCount } = analysis
 
-  // Use default thickness if not detected
+  // ok Use default thickness if not detected
   const finalThickness = thickness || 10
 
   // Determine V-opening based on thickness
