@@ -1,4 +1,4 @@
-import Tesseract from "tesseract.js"
+import { fetch } from "node-fetch"
 
 export interface RecognizedDimension {
   value: number
@@ -19,85 +19,27 @@ export interface DrawingAnalysisResult {
 
 export async function analyzeDrawing(imageData: string): Promise<DrawingAnalysisResult> {
   try {
-    // Perform OCR on the image
-    const result = await Tesseract.recognize(imageData, "deu+eng", {
-      logger: (m) => {
-        if (m.status === "recognizing text") {
-          console.log(`[v0] OCR Progress: ${Math.round(m.progress * 100)}%`)
-        }
+    console.log("[v0] Starting AI-powered drawing analysis...")
+
+    // Call OpenAI GPT-4 Vision API for intelligent drawing analysis
+    const response = await fetch("/api/analyze-drawing", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({ imageData }),
     })
 
-    const text = result.data.text
-    console.log("[v0] OCR Raw Text:", text)
-
-    // Extract dimensions (numbers followed by optional mm or without unit)
-    const dimensionPattern = /(\d+(?:[.,]\d+)?)\s*(?:mm)?/gi
-    const dimensionMatches = [...text.matchAll(dimensionPattern)]
-    const dimensions = dimensionMatches
-      .map((m) => Number.parseFloat(m[1].replace(",", ".")))
-      .filter((n) => !isNaN(n) && n > 0 && n < 10000) // Filter reasonable dimensions
-
-    // Extract angles (numbers followed by ° or "grad")
-    const anglePattern = /(\d+(?:[.,]\d+)?)\s*(?:°|grad)/gi
-    const angleMatches = [...text.matchAll(anglePattern)]
-    const angles = angleMatches
-      .map((m) => Number.parseFloat(m[1].replace(",", ".")))
-      .filter((n) => !isNaN(n) && n > 0 && n <= 180)
-
-    // Extract radius (R followed by number)
-    const radiusPattern = /R\s*(\d+(?:[.,]\d+)?)/i
-    const radiusMatch = text.match(radiusPattern)
-    const radius = radiusMatch ? `R${radiusMatch[1].replace(",", ".")}` : null
-
-    // Try to detect material thickness (often marked as "10" or "t=10" or "s=10")
-    const thicknessPattern = /(?:t|s|dicke)\s*[=:]\s*(\d+(?:[.,]\d+)?)|^(\d+)$/im
-    const thicknessMatch = text.match(thicknessPattern)
-    let thickness: number | null = null
-
-    if (thicknessMatch) {
-      thickness = Number.parseFloat((thicknessMatch[1] || thicknessMatch[2]).replace(",", "."))
-    } else {
-      // Try to infer thickness from common values in dimensions
-      const commonThicknesses = [1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20]
-      for (const t of commonThicknesses) {
-        if (dimensions.includes(t)) {
-          thickness = t
-          break
-        }
-      }
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`)
     }
 
-    // Estimate bend count from angles found or from visual analysis
-    const bendCount = angles.length > 0 ? angles.length : estimateBendCount(text, dimensions)
+    const result = await response.json()
+    console.log("[v0] AI Analysis Result:", result)
 
-    // Determine what data is missing
-    const missingData: string[] = []
-    if (dimensions.length < bendCount + 1) {
-      missingData.push("Nicht alle Innenlängen erkannt")
-    }
-    if (angles.length < bendCount) {
-      missingData.push("Nicht alle Biegewinkel erkannt")
-    }
-    if (!radius) {
-      missingData.push("Kein Radius erkannt (Standard R5 wird verwendet)")
-    }
-    if (!thickness) {
-      missingData.push("Materialdicke nicht erkannt")
-    }
-
-    return {
-      dimensions: dimensions.slice(0, 10), // Limit to reasonable number
-      angles: angles.length > 0 ? angles : [90], // Default to 90° if none found
-      radius: radius || "R5", // Default to R5
-      thickness,
-      bendCount: Math.max(bendCount, 1),
-      confidence: result.data.confidence / 100,
-      rawText: text,
-      missingData,
-    }
+    return result
   } catch (error) {
-    console.error("[v0] OCR Error:", error)
+    console.error("[v0] Drawing Analysis Error:", error)
     throw new Error("Fehler bei der Zeichnungserkennung")
   }
 }
