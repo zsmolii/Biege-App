@@ -1,5 +1,3 @@
-import { fetch } from "node-fetch"
-
 export interface RecognizedDimension {
   value: number
   confidence: number
@@ -79,7 +77,7 @@ export function processBendData(
   const bends = []
   const { dimensions, angles, radius, thickness, bendCount } = analysis
 
-  // ok Use default thickness if not detected
+  // Use default thickness if not detected
   const finalThickness = thickness || 10
 
   // Determine V-opening based on thickness
