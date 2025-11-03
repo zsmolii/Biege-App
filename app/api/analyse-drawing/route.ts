@@ -3,24 +3,28 @@ import { generateText } from "ai"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[v0] API: Received drawing analysis request")
+
     const { imageData } = await request.json()
 
     if (!imageData) {
+      console.error("[v0] API: No image data provided")
       return NextResponse.json({ error: "No image data provided" }, { status: 400 })
     }
 
-    console.log("[v0] Analyzing drawing with AI...")
+    console.log("[v0] API: Analyzing drawing with AI...")
 
-    // Use GPT-4 Vision to analyze the technical drawing
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Du bist ein Experte für technische Zeichnungen und Blechbearbeitung. Analysiere diese technische Zeichnung eines gebogenen Blechteils und extrahiere folgende Informationen:
+    let text: string
+    try {
+      const result = await generateText({
+        model: "openai/gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Du bist ein Experte für technische Zeichnungen und Blechbearbeitung. Analysiere diese technische Zeichnung eines gebogenen Blechteils und extrahiere folgende Informationen:
 
 1. **Biegungen**: Wie viele Biegungen gibt es? Zähle alle Biegungen von links nach rechts.
 2. **Innenlängen**: Für jede Biegung, was ist die Innenlänge (die Länge zwischen den Biegungen)? Gib die Maße in mm an.
@@ -44,22 +48,36 @@ Antworte im folgenden JSON-Format:
   "confidence": <Dein Vertrauen in die Analyse, 0-1>,
   "explanation": "<Kurze Erklärung deiner Analyse>"
 }`,
-            },
-            {
-              type: "image",
-              image: imageData,
-            },
-          ],
+              },
+              {
+                type: "image",
+                image: imageData,
+              },
+            ],
+          },
+        ],
+      })
+      text = result.text
+    } catch (aiError) {
+      console.error("[v0] API: AI generation failed:", aiError)
+      return NextResponse.json(
+        {
+          error: `AI-Analyse fehlgeschlagen: ${aiError instanceof Error ? aiError.message : "Unbekannter Fehler"}. Bitte überprüfen Sie, ob die AI Gateway korrekt konfiguriert ist.`,
         },
-      ],
-    })
+        { status: 500 },
+      )
+    }
 
-    console.log("[v0] AI Response:", text)
+    console.log("[v0] API: AI Response:", text)
 
     // Parse the AI response
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      throw new Error("Could not parse AI response")
+      console.error("[v0] API: Could not parse AI response")
+      return NextResponse.json(
+        { error: "Die AI-Antwort konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut." },
+        { status: 500 },
+      )
     }
 
     const analysis = JSON.parse(jsonMatch[0])
@@ -99,11 +117,14 @@ Antworte im folgenden JSON-Format:
       result.missingData.push("Materialdicke nicht erkannt")
     }
 
-    console.log("[v0] Formatted Analysis:", result)
+    console.log("[v0] API: Formatted Analysis:", result)
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("[v0] Analysis Error:", error)
-    return NextResponse.json({ error: "Failed to analyze drawing" }, { status: 500 })
+    console.error("[v0] API: Analysis Error:", error)
+    return NextResponse.json(
+      { error: `Fehler bei der Analyse: ${error instanceof Error ? error.message : "Unbekannter Fehler"}` },
+      { status: 500 },
+    )
   }
 }
