@@ -61,10 +61,11 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
     setAnalysisProgress(0)
 
     try {
-      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setAnalysisProgress((prev) => Math.min(prev + 10, 90))
       }, 200)
+
+      console.log("[v0] Starting drawing analysis...")
 
       // Perform OCR analysis
       const analysis = await analyzeDrawing(imageData)
@@ -81,7 +82,10 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
       }
     } catch (error) {
       console.error("[v0] Analysis failed:", error)
-      alert("Fehler bei der automatischen Analyse. Bitte versuchen Sie es erneut.")
+      const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
+      alert(
+        `Fehler bei der automatischen Analyse:\n\n${errorMessage}\n\nBitte versuchen Sie es erneut oder geben Sie die Werte manuell ein.`,
+      )
     } finally {
       setIsAnalyzing(false)
     }
