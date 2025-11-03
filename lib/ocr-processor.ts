@@ -29,16 +29,23 @@ export async function analyzeDrawing(imageData: string): Promise<DrawingAnalysis
     })
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({ error: response.statusText }))
+      console.error("[v0] API Error Response:", errorData)
+      throw new Error(errorData.error || `API Error: ${response.statusText}`)
     }
 
     const result = await response.json()
     console.log("[v0] AI Analysis Result:", result)
 
+    if (result.error) {
+      throw new Error(result.error)
+    }
+
     return result
   } catch (error) {
     console.error("[v0] Drawing Analysis Error:", error)
-    throw new Error("Fehler bei der Zeichnungserkennung")
+    const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
+    throw new Error(`Fehler bei der Zeichnungserkennung: ${errorMessage}`)
   }
 }
 
