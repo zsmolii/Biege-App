@@ -61,7 +61,8 @@
     "zod": "3.25.76",
     "@supabase/ssr": "0.7.0",
     "ai": "5.0.86",
-    "@supabase/supabase-js": "2.78.0"
+    "@supabase/supabase-js": "2.78.0",
+    "@ai-sdk/openai": "2.0.62"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
