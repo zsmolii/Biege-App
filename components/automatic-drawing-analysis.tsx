@@ -12,16 +12,13 @@ import { getTools } from "@/lib/supabase-storage"
 import { analyzeDrawing, processBendData, type DrawingAnalysisResult } from "@/lib/ocr-processor"
 import { calculateMarkingPoints, type BendInstruction } from "@/lib/marking-calculator"
 import { saveLearnedData } from "@/lib/learning-system"
-import { isAdmin } from "@/lib/admin-check"
-import { AlertCircle, Brain, CheckCircle2, Lock, Loader2, Ruler, Scan, Sparkles } from "lucide-react"
+import { AlertCircle, Brain, CheckCircle2, Loader2, Ruler, Scan, Sparkles } from "lucide-react"
 
 interface AutomaticDrawingAnalysisProps {
   imageData: string | null
 }
 
 export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysisProps) {
-  const [isUserAdmin, setIsUserAdmin] = useState(false)
-  const [checkingAdmin, setCheckingAdmin] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [ocrResult, setOcrResult] = useState<DrawingAnalysisResult | null>(null)
@@ -47,15 +44,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
   const [materials, setMaterials] = useState<string[]>([])
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      const adminStatus = await isAdmin()
-      setIsUserAdmin(adminStatus)
-      setCheckingAdmin(false)
-    }
-    checkAdminStatus()
-  }, [])
-
-  useEffect(() => {
     const loadTools = async () => {
       const m = await getTools("material")
       setMaterials(m)
@@ -77,21 +65,17 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
         setAnalysisProgress((prev) => Math.min(prev + 10, 90))
       }, 200)
 
-      console.log("[v0] Starting drawing analysis...")
-
       const analysis = await analyzeDrawing(imageData)
 
       clearInterval(progressInterval)
       setAnalysisProgress(100)
 
-      console.log("[v0] Analysis Result:", analysis)
       setOcrResult(analysis)
 
       if (!selectedMaterial && materials.length > 0) {
         setSelectedMaterial(materials[0])
       }
     } catch (error) {
-      console.error("[v0] Analysis failed:", error)
       const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
       alert(
         `Fehler bei der automatischen Analyse:\n\n${errorMessage}\n\nBitte versuchen Sie es erneut oder geben Sie die Werte manuell ein.`,
@@ -165,50 +149,8 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
     setLearningBendIndex(null)
   }
 
-  if (checkingAdmin) {
-    return null
-  }
-
-  if (!isUserAdmin && imageData && !ocrResult) {
-    return (
-      <Card className="border-amber-500/50 bg-amber-500/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-amber-400" />
-            Automatische Zeichnungserkennung
-          </CardTitle>
-          <CardDescription>Diese Funktion wird gerade perfektioniert und ist in Kürze verfügbar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <Sparkles className="h-4 w-4" />
-            <AlertDescription>
-              <div className="font-semibold mb-2">In Kürze verfügbar!</div>
-              <p className="text-sm">
-                Wir arbeiten daran, die automatische Zeichnungserkennung noch präziser zu machen. Diese Funktion wird
-                bald für alle Nutzer freigeschaltet.
-              </p>
-              <p className="text-sm mt-2 text-muted-foreground">
-                In der Zwischenzeit können Sie die Werte manuell eingeben.
-              </p>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
     <div className="space-y-6">
-      {isUserAdmin && imageData && !ocrResult && (
-        <Alert className="border-green-500/50 bg-green-500/5">
-          <Brain className="h-4 w-4" />
-          <AlertDescription>
-            <span className="font-semibold text-green-400">Admin-Modus:</span> Sie können die Zeichnungsanalyse testen
-          </AlertDescription>
-        </Alert>
-      )}
-
       {imageData && !ocrResult && (
         <Card className="border-blue-500/50 bg-blue-500/5">
           <CardHeader>
