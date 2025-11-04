@@ -60,9 +60,24 @@ Antworte im folgenden JSON-Format:
       text = result.text
     } catch (aiError) {
       console.error("[v0] API: AI generation failed:", aiError)
+
+      const errorMessage = aiError instanceof Error ? aiError.message : "Unbekannter Fehler"
+
+      // Check if it's an authentication error
+      if (errorMessage.includes("401") || errorMessage.includes("authentication") || errorMessage.includes("API key")) {
+        return NextResponse.json(
+          {
+            error:
+              "Die automatische Zeichnungsanalyse benötigt einen OpenAI API-Key. Bitte fügen Sie einen OPENAI_API_KEY in den Umgebungsvariablen hinzu oder geben Sie die Werte manuell ein.",
+          },
+          { status: 401 },
+        )
+      }
+
+      // Generic AI error
       return NextResponse.json(
         {
-          error: `AI-Analyse fehlgeschlagen: ${aiError instanceof Error ? aiError.message : "Unbekannter Fehler"}. Bitte überprüfen Sie, ob die AI Gateway korrekt konfiguriert ist.`,
+          error: `Die AI-Analyse ist momentan nicht verfügbar: ${errorMessage}. Bitte geben Sie die Werte manuell ein.`,
         },
         { status: 500 },
       )
@@ -75,7 +90,10 @@ Antworte im folgenden JSON-Format:
     if (!jsonMatch) {
       console.error("[v0] API: Could not parse AI response")
       return NextResponse.json(
-        { error: "Die AI-Antwort konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut." },
+        {
+          error:
+            "Die AI-Antwort konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder geben Sie die Werte manuell ein.",
+        },
         { status: 500 },
       )
     }
@@ -123,7 +141,9 @@ Antworte im folgenden JSON-Format:
   } catch (error) {
     console.error("[v0] API: Analysis Error:", error)
     return NextResponse.json(
-      { error: `Fehler bei der Analyse: ${error instanceof Error ? error.message : "Unbekannter Fehler"}` },
+      {
+        error: `Fehler bei der Analyse: ${error instanceof Error ? error.message : "Unbekannter Fehler"}. Bitte geben Sie die Werte manuell ein.`,
+      },
       { status: 500 },
     )
   }
