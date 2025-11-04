@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mail } from "lucide-react"
-import { registerUserInDatabase } from "@/app/actions/register-user"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginEmail, setLoginEmail] = useState("")
@@ -96,14 +95,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Registrierung fehlgeschlagen")
       }
 
-      console.log("[v0] Saving user to database via Server Action...")
-      const result = await registerUserInDatabase(data.user.id, registerEmail, registerUsername)
-
-      if (!result.success) {
-        throw new Error(result.error || "Database error saving new user")
-      }
-
-      console.log("[v0] User saved to database successfully!")
+      console.log("[v0] User created successfully! Database trigger will handle the rest.")
 
       if (data.session) {
         console.log("[v0] Registration successful with auto-login!")
