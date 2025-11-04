@@ -1,12 +1,12 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function registerUserInDatabase(userId: string, email: string, username: string) {
   try {
     console.log("[v0] Server Action: Registering user in database:", { userId, email, username })
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Check if user is admin
     const isAdmin = email === "zsmolii@icloud.com"
