@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mail } from "lucide-react"
+import { registerUserInDatabase } from "@/app/actions/register-user"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginEmail, setLoginEmail] = useState("")
@@ -95,36 +96,11 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Registrierung fehlgeschlagen")
       }
 
-      console.log("[v0] Saving user to database tables...")
+      console.log("[v0] Saving user to database via Server Action...")
+      const result = await registerUserInDatabase(data.user.id, registerEmail, registerUsername)
 
-      // Check if user is admin
-      const isAdmin = registerEmail === "zsmolii@icloud.com"
-
-      // Insert into users table
-      const { error: usersError } = await supabase.from("users").insert({
-        id: data.user.id,
-        email: registerEmail,
-        is_admin: isAdmin,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-
-      if (usersError) {
-        console.error("[v0] Error saving to users table:", usersError)
-        throw new Error(`Database error saving new user: ${usersError.message}`)
-      }
-
-      // Insert into app_users table
-      const { error: appUsersError } = await supabase.from("app_users").insert({
-        id: data.user.id,
-        username: registerUsername,
-        created_at: new Date().toISOString(),
-      })
-
-      if (appUsersError) {
-        console.error("[v0] Error saving to app_users table:", appUsersError)
-        throw new Error(`Database error saving user profile: ${appUsersError.message}`)
+      if (!result.success) {
+        throw new Error(result.error || "Database error saving new user")
       }
 
       console.log("[v0] User saved to database successfully!")
