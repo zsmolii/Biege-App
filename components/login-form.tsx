@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Mail } from "lucide-react"
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [loginEmail, setLoginEmail] = useState("")
@@ -19,6 +20,9 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false)
+  const [confirmationEmail, setConfirmationEmail] = useState("")
+  const [resendLoading, setResendLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,6 +64,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError("")
     setSuccess("")
     setLoading(true)
+    setNeedsEmailConfirmation(false)
 
     try {
       if (registerCode !== "Schlosser") {
@@ -98,7 +103,11 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         }, 1500)
       } else {
         console.log("[v0] Registration successful, email confirmation required")
-        setSuccess("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse.")
+        setNeedsEmailConfirmation(true)
+        setConfirmationEmail(registerEmail)
+        setSuccess(
+          "Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse. Überprüfen Sie auch Ihren Spam-Ordner.",
+        )
       }
 
       setRegisterEmail("")
@@ -110,6 +119,37 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       setError(err.message || "Registrierung fehlgeschlagen")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendConfirmation = async () => {
+    setError("")
+    setSuccess("")
+    setResendLoading(true)
+
+    try {
+      console.log("[v0] Resending confirmation email to:", confirmationEmail)
+      const supabase = createClient()
+
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: confirmationEmail,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin,
+        },
+      })
+
+      if (resendError) {
+        throw resendError
+      }
+
+      console.log("[v0] Confirmation email resent successfully")
+      setSuccess("Bestätigungs-E-Mail wurde erneut gesendet! Bitte überprüfen Sie Ihren Posteingang und Spam-Ordner.")
+    } catch (err: any) {
+      console.error("[v0] Resend error:", err)
+      setError(err.message || "Fehler beim Senden der E-Mail. Bitte versuchen Sie es später erneut.")
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -215,6 +255,18 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Wird geladen..." : "Registrieren"}
                 </Button>
+                {needsEmailConfirmation && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full bg-transparent"
+                    onClick={handleResendConfirmation}
+                    disabled={resendLoading}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    {resendLoading ? "Wird gesendet..." : "Bestätigungs-E-Mail erneut senden"}
+                  </Button>
+                )}
               </form>
             </TabsContent>
           </Tabs>
