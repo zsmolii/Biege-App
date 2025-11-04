@@ -95,7 +95,15 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Registrierung fehlgeschlagen")
       }
 
-      console.log("[v0] User created successfully! Database trigger will handle the rest.")
+      console.log("[v0] Creating user in database...")
+      const { createUserInDatabase } = await import("@/app/actions/create-user")
+      const result = await createUserInDatabase(data.user.id, registerEmail, registerUsername)
+
+      if (!result.success) {
+        throw new Error(result.error || "Database error saving new user")
+      }
+
+      console.log("[v0] User created successfully in database!")
 
       if (data.session) {
         console.log("[v0] Registration successful with auto-login!")
