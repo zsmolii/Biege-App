@@ -12,13 +12,16 @@ import { getTools } from "@/lib/supabase-storage"
 import { analyzeDrawing, processBendData, type DrawingAnalysisResult } from "@/lib/ocr-processor"
 import { calculateMarkingPoints, type BendInstruction } from "@/lib/marking-calculator"
 import { saveLearnedData } from "@/lib/learning-system"
-import { AlertCircle, Brain, CheckCircle2, Loader2, Ruler, Scan, Sparkles } from "lucide-react"
+import { isAdmin } from "@/lib/admin-check"
+import { AlertCircle, Brain, CheckCircle2, Lock, Loader2, Ruler, Scan, Sparkles } from "lucide-react"
 
 interface AutomaticDrawingAnalysisProps {
   imageData: string | null
 }
 
 export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysisProps) {
+  const [isUserAdmin, setIsUserAdmin] = useState(false)
+  const [checkingAdmin, setCheckingAdmin] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [ocrResult, setOcrResult] = useState<DrawingAnalysisResult | null>(null)
@@ -44,6 +47,15 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
   const [materials, setMaterials] = useState<string[]>([])
 
   useEffect(() => {
+    const checkAdminStatus = async () => {
+      const adminStatus = await isAdmin()
+      setIsUserAdmin(adminStatus)
+      setCheckingAdmin(false)
+    }
+    checkAdminStatus()
+  }, [])
+
+  useEffect(() => {
     const loadTools = async () => {
       const m = await getTools("material")
       setMaterials(m)
@@ -67,7 +79,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
 
       console.log("[v0] Starting drawing analysis...")
 
-      // Perform OCR analysis
       const analysis = await analyzeDrawing(imageData)
 
       clearInterval(progressInterval)
@@ -76,7 +87,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
       console.log("[v0] Analysis Result:", analysis)
       setOcrResult(analysis)
 
-      // Auto-select first material if not selected
       if (!selectedMaterial && materials.length > 0) {
         setSelectedMaterial(materials[0])
       }
@@ -94,10 +104,8 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
   const handleCalculate = () => {
     if (!ocrResult || !selectedMaterial) return
 
-    // Process the OCR data into bend instructions
     const bends = processBendData(ocrResult, selectedMaterial)
 
-    // Apply manual corrections
     const correctedBends = bends.map((bend, index) => {
       const correction = manualCorrections[index]
       return {
@@ -107,7 +115,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
       }
     })
 
-    // Calculate marking points
     const calculationResult = calculateMarkingPoints(correctedBends)
     setResult(calculationResult)
   }
@@ -153,15 +160,55 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
       pressDistance: learningValues.pressDistance,
     })
 
-    // Recalculate with new learned data
     handleCalculate()
     setLearningMode(false)
     setLearningBendIndex(null)
   }
 
+  if (checkingAdmin) {
+    return null
+  }
+
+  if (!isUserAdmin && imageData && !ocrResult) {
+    return (
+      <Card className="border-amber-500/50 bg-amber-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-amber-400" />
+            Automatische Zeichnungserkennung
+          </CardTitle>
+          <CardDescription>Diese Funktion wird gerade perfektioniert und ist in Kürze verfügbar</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Sparkles className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-semibold mb-2">In Kürze verfügbar!</div>
+              <p className="text-sm">
+                Wir arbeiten daran, die automatische Zeichnungserkennung noch präziser zu machen. Diese Funktion wird
+                bald für alle Nutzer freigeschaltet.
+              </p>
+              <p className="text-sm mt-2 text-muted-foreground">
+                In der Zwischenzeit können Sie die Werte manuell eingeben.
+              </p>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      {/* Auto-Analyze Button */}
+      {isUserAdmin && imageData && !ocrResult && (
+        <Alert className="border-green-500/50 bg-green-500/5">
+          <Brain className="h-4 w-4" />
+          <AlertDescription>
+            <span className="font-semibold text-green-400">Admin-Modus:</span> Sie können die Zeichnungsanalyse testen
+          </AlertDescription>
+        </Alert>
+      )}
+
       {imageData && !ocrResult && (
         <Card className="border-blue-500/50 bg-blue-500/5">
           <CardHeader>
@@ -197,7 +244,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
         </Card>
       )}
 
-      {/* OCR Results & Manual Corrections */}
       {ocrResult && (
         <>
           <Card>
@@ -209,7 +255,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
               <CardDescription>Überprüfen Sie die erkannten Werte und korrigieren Sie bei Bedarf</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Missing Data Warnings */}
               {ocrResult.missingData.length > 0 && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
@@ -226,7 +271,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
                 </Alert>
               )}
 
-              {/* Material Selection */}
               <div className="space-y-2">
                 <Label>Material auswählen</Label>
                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
@@ -243,7 +287,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
                 </Select>
               </div>
 
-              {/* Recognized Bends */}
               <div className="space-y-3">
                 <h4 className="font-semibold text-sm">Erkannte Biegungen: {ocrResult.bendCount}</h4>
                 {Array.from({ length: ocrResult.bendCount }).map((_, index) => {
@@ -285,7 +328,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
                 })}
               </div>
 
-              {/* Additional Info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-muted/30 p-3 rounded">
                   <div className="text-muted-foreground text-xs">Radius</div>
@@ -306,10 +348,8 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
         </>
       )}
 
-      {/* Results Section - Same as before */}
       {result && (
         <>
-          {/* Flat Length */}
           <Card className="border-blue-500/50 bg-blue-500/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -328,7 +368,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
             </CardContent>
           </Card>
 
-          {/* Bend Instructions */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Biegeanweisungen</h3>
             {result.instructions.map((instruction, index) => (
@@ -386,7 +425,6 @@ export function AutomaticDrawingAnalysis({ imageData }: AutomaticDrawingAnalysis
         </>
       )}
 
-      {/* Learning Mode Dialog */}
       {learningMode && learningBendIndex !== null && result && (
         <Card className="border-green-500/50 bg-green-500/5">
           <CardHeader>
