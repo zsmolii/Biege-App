@@ -31,15 +31,12 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true)
 
     try {
-      console.log("[v0] Attempting login with:", loginEmail)
       const supabase = createClient()
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       })
-
-      console.log("[v0] Login response:", { data, error: signInError })
 
       if (signInError) {
         throw signInError
@@ -49,10 +46,8 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Anmeldung fehlgeschlagen")
       }
 
-      console.log("[v0] Login successful!")
       onLoginSuccess()
     } catch (err: any) {
-      console.error("[v0] Login error:", err)
       setError(err.message || "Ungültige Anmeldedaten")
     } finally {
       setLoading(false)
@@ -71,7 +66,6 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Ungültiger Registrierungscode")
       }
 
-      console.log("[v0] Attempting registration with:", registerEmail)
       const supabase = createClient()
 
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -85,8 +79,6 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         },
       })
 
-      console.log("[v0] Registration response:", { data, error: signUpError })
-
       if (signUpError) {
         throw signUpError
       }
@@ -95,24 +87,12 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw new Error("Registrierung fehlgeschlagen")
       }
 
-      console.log("[v0] Creating user in database...")
-      const { createUserInDatabase } = await import("@/app/actions/create-user")
-      const result = await createUserInDatabase(data.user.id, registerEmail, registerUsername)
-
-      if (!result.success) {
-        throw new Error(result.error || "Database error saving new user")
-      }
-
-      console.log("[v0] User created successfully in database!")
-
       if (data.session) {
-        console.log("[v0] Registration successful with auto-login!")
         setSuccess("Registrierung erfolgreich! Sie werden angemeldet...")
         setTimeout(() => {
           onLoginSuccess()
         }, 1500)
       } else {
-        console.log("[v0] Registration successful, email confirmation required")
         setNeedsEmailConfirmation(true)
         setConfirmationEmail(registerEmail)
         setSuccess(
@@ -125,7 +105,6 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       setRegisterUsername("")
       setRegisterCode("")
     } catch (err: any) {
-      console.error("[v0] Register error:", err)
       setError(err.message || "Registrierung fehlgeschlagen")
     } finally {
       setLoading(false)
@@ -138,7 +117,6 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setResendLoading(true)
 
     try {
-      console.log("[v0] Resending confirmation email to:", confirmationEmail)
       const supabase = createClient()
 
       const { error: resendError } = await supabase.auth.resend({
@@ -153,10 +131,8 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         throw resendError
       }
 
-      console.log("[v0] Confirmation email resent successfully")
       setSuccess("Bestätigungs-E-Mail wurde erneut gesendet! Bitte überprüfen Sie Ihren Posteingang und Spam-Ordner.")
     } catch (err: any) {
-      console.error("[v0] Resend error:", err)
       setError(err.message || "Fehler beim Senden der E-Mail. Bitte versuchen Sie es später erneut.")
     } finally {
       setResendLoading(false)
