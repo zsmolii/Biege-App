@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
+import { openai } from "@ai-sdk/openai"
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,12 +13,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No image data provided" }, { status: 400 })
     }
 
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      console.error("[v0] API: OPENAI_API_KEY not configured")
+      return NextResponse.json(
+        {
+          error:
+            "Die automatische Zeichnungsanalyse benötigt einen OpenAI API-Key. Bitte fügen Sie einen OPENAI_API_KEY in den Umgebungsvariablen hinzu und deployen Sie die App neu.",
+        },
+        { status: 401 },
+      )
+    }
+
     console.log("[v0] API: Analyzing drawing with AI...")
 
     let text: string
     try {
       const result = await generateText({
-        model: "openai/gpt-4o",
+        model: openai("gpt-4o", { apiKey }),
         messages: [
           {
             role: "user",
@@ -68,7 +81,7 @@ Antworte im folgenden JSON-Format:
         return NextResponse.json(
           {
             error:
-              "Die automatische Zeichnungsanalyse benötigt einen OpenAI API-Key. Bitte fügen Sie einen OPENAI_API_KEY in den Umgebungsvariablen hinzu oder geben Sie die Werte manuell ein.",
+              "Die automatische Zeichnungsanalyse benötigt einen gültigen OpenAI API-Key. Bitte überprüfen Sie den OPENAI_API_KEY in den Umgebungsvariablen.",
           },
           { status: 401 },
         )
